@@ -48,8 +48,8 @@ AprilTagDetector::AprilTagDetector(ros::NodeHandle& nh, ros::NodeHandle& pnh): i
   image_pub_ = it_.advertise("tag_detections_image", 1);
   detections_pub_ = nh.advertise<AprilTagDetectionArray>("tag_detections", 1);
   pose_pub_ = nh.advertise<geometry_msgs::PoseArray>("tag_detections_pose", 1);
-  id_pub_ = nh.advertise<std_msgs::Int32>("tag_detections_id", 1);
-  size_pub_ = nh.advertise<std_msgs::Float32>("tag_detections_size", 1);
+  id_pub_ = nh.advertise<std_msgs::Int32MultiArray>("tag_detections_id", 1);
+  size_pub_ = nh.advertise<std_msgs::Float32MultiArray>("tag_detections_size", 1);
 }
 AprilTagDetector::~AprilTagDetector(){
   image_sub_.shutdown();
