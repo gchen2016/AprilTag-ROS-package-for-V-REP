@@ -34,10 +34,16 @@ AprilTagDetector::AprilTagDetector(ros::NodeHandle& nh, ros::NodeHandle& pnh): i
 
   AprilTags::TagCodes tag_codes = AprilTags::tagCodes36h11;
   tag_detector_= boost::shared_ptr<AprilTags::TagDetector>(new AprilTags::TagDetector(tag_codes));
-  image_sub_ = it_.subscribeCamera("image_rect", 1, &AprilTagDetector::imageCb, this);
-  image_pub_ = it_.advertise("vrep/vision_sensor_image", 1);
+
+  // Add subscription
+  image_sub_ = it_.subscribeCamera("vrep/vision_sensor_image", 1, &AprilTagDetector::imageCb, this);
+
+  // Add publication
+  image_pub_ = it_.advertise("tag_detections_image", 1);
   detections_pub_ = nh.advertise<AprilTagDetectionArray>("tag_detections", 1);
   pose_pub_ = nh.advertise<geometry_msgs::PoseArray>("tag_detections_pose", 1);
+  id_pub_ = nh.advertise<std_msgs::Int32>("tag_detections_id", 1);
+  size_pub_ = nh.advertise<std_msgs::Float32>("tag_detections_size", 1);
 }
 AprilTagDetector::~AprilTagDetector(){
   image_sub_.shutdown();
@@ -54,7 +60,7 @@ void AprilTagDetector::imageCb(const sensor_msgs::ImageConstPtr& msg,const senso
   }
   cv::Mat gray;
   cv::cvtColor(cv_ptr->image, gray, CV_BGR2GRAY);
-  std::vector<AprilTags::TagDetection>	detections = tag_detector_->extractTags(gray);
+  std::vector<AprilTags::TagDetection>  detections = tag_detector_->extractTags(gray);
   ROS_DEBUG("%d tag detected", (int)detections.size());
 
   double fx = cam_info->K[0];
@@ -107,6 +113,8 @@ void AprilTagDetector::imageCb(const sensor_msgs::ImageConstPtr& msg,const senso
   detections_pub_.publish(tag_detection_array);
   pose_pub_.publish(tag_pose_array);
   image_pub_.publish(cv_ptr->toImageMsg());
+  id_pub_.publish(tag_detection.id);
+  size_pub_.publish(tag_detection.size);
 }
 
 
