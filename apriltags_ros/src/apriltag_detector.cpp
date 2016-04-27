@@ -50,6 +50,7 @@ AprilTagDetector::AprilTagDetector(ros::NodeHandle& nh, ros::NodeHandle& pnh): i
   pose_pub_ = nh.advertise<geometry_msgs::PoseArray>("tag_detections_pose", 1);
   id_pub_ = nh.advertise<std_msgs::Int32MultiArray>("tag_detections_id", 1);
   size_pub_ = nh.advertise<std_msgs::Float32MultiArray>("tag_detections_size", 1);
+  yaw_pub_ = nh.advertise<std_msgs::Float32MultiArray>("tag_detections_yaw", 1);
 }
 AprilTagDetector::~AprilTagDetector(){
   image_sub_.shutdown();
@@ -83,6 +84,7 @@ void AprilTagDetector::imageCb(const sensor_msgs::ImageConstPtr& msg,const senso
   tag_pose_array.header = cv_ptr->header;
   std_msgs::Int32MultiArray tag_id_array;
   std_msgs::Float32MultiArray tag_size_array;
+  std_msgs::Float32MultiArray tag_yaw_array;
 
   BOOST_FOREACH(AprilTags::TagDetection detection, detections){
     std::map<int, AprilTagDescription>::const_iterator description_itr = descriptions_.find(detection.id);
@@ -108,6 +110,9 @@ void AprilTagDetector::imageCb(const sensor_msgs::ImageConstPtr& msg,const senso
     tag_pose.pose.orientation.w = rot_quaternion.w();
     tag_pose.header = cv_ptr->header;
 
+    // Calculate yaw
+    double tag_yaw = detection.getYawValue(rot_quaternion);
+
     AprilTagDetection tag_detection;
     tag_detection.pose = tag_pose;
     tag_detection.id = detection.id;
@@ -116,6 +121,7 @@ void AprilTagDetector::imageCb(const sensor_msgs::ImageConstPtr& msg,const senso
     tag_pose_array.poses.push_back(tag_pose.pose);
     tag_id_array.data.push_back(tag_detection.id);
     tag_size_array.data.push_back(tag_detection.size);
+    tag_yaw_array.data.push_back(tag_yaw);
     
     tf::Stamped<tf::Transform> tag_transform;
     tf::poseStampedMsgToTF(tag_pose, tag_transform);
@@ -126,6 +132,7 @@ void AprilTagDetector::imageCb(const sensor_msgs::ImageConstPtr& msg,const senso
   image_pub_.publish(cv_ptr->toImageMsg());
   id_pub_.publish(tag_id_array);
   size_pub_.publish(tag_size_array);
+  yaw_pub_.publish(tag_yaw_array);
 }
 
 

@@ -41,6 +41,7 @@ class AprilTagDetector{
   ros::Publisher pose_pub_;
   ros::Publisher id_pub_;
   ros::Publisher size_pub_;
+  ros::Publisher yaw_pub_;
   tf::TransformBroadcaster tf_pub_;
   boost::shared_ptr<AprilTags::TagDetector> tag_detector_;
 };
