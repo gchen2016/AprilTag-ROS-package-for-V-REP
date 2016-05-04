@@ -1,0 +1,7 @@
+<launch>
+	<node pkg="state_est_control" 
+	type="state_est_control_node" 
+	name="state_est_control" 
+	output="screen">
+	</node>
+</launch>
