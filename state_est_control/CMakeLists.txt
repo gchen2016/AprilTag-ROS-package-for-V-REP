@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   message_generation
   cmake_modules
+  nodelet
 )
 
 ## System dependencies are found with CMake's conventions
@@ -45,7 +46,7 @@ generate_messages(
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES state_est_controller
- CATKIN_DEPENDS std_msgs roscpp geometry_msgs message_runtime
+ CATKIN_DEPENDS std_msgs roscpp geometry_msgs message_runtime nodelet
  DEPENDS system_lib
 )
 
@@ -70,6 +71,12 @@ target_link_libraries(state_est_controller
 add_dependencies(state_est_controller 
 state_est_control_generate_messages_cpp)
 
+add_library(state_est_controller_nodelet src/state_est_controller_nodelet.cpp)
+target_link_libraries(state_est_controller_nodelet
+  ${catkin_LIBRARIES}
+  state_est_controller
+)
+
 ## Declare a C++ executable
 add_executable(state_est_controller_node src/state_est_controller_node.cpp)
 
@@ -87,7 +94,9 @@ target_link_libraries(state_est_controller_node
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
 ## Mark executables and/or libraries for installation
-install(TARGETS state_est_controller state_est_controller_node
+install(TARGETS state_est_controller
+state_est_controller_nodelet 
+state_est_controller_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -100,6 +109,6 @@ install(DIRECTORY include/state_est_control
 )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
-install(FILES
+install(FILES nodelet_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

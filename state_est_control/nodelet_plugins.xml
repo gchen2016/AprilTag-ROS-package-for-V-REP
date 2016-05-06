@@ -1,0 +1,6 @@
+<library path="lib/libstate_est_controller_nodelet">
+  <class name="state_est_control/StateEstControllerNodelet" type="state_est_control::StateEstControllerNodelet" base_class_type="nodelet::Nodelet">
+    <description>
+    </description>
+  </class>
+</library>

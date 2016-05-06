@@ -34,11 +34,9 @@ namespace state_est_control {
 		geometry_msgs::Pose last_pose;
 		for(int i=0; i < pos_array.poses.size(); i++) {
 			last_pose = pos_array.poses[i];
+			pos_diff.x = last_pose.position.x;
+			pos_diff.y = last_pose.position.y;
 		}
-
-		
-		pos_diff.x = last_pose.position.x;
-		pos_diff.y = last_pose.position.y;
 		
 	}
 
