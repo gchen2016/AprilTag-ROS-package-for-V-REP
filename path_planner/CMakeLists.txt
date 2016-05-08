@@ -6,6 +6,7 @@ project(path_planner)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
+  nav_msgs
   message_generation
   cmake_modules
   nodelet
@@ -32,6 +33,7 @@ add_message_files(
 generate_messages(
   DEPENDENCIES
   geometry_msgs
+  nav_msgs
   std_msgs
 )
 
@@ -46,7 +48,7 @@ generate_messages(
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES path_planner
- CATKIN_DEPENDS geometry_msgs message_runtime nodelet roscpp std_msgs
+ CATKIN_DEPENDS geometry_msgs nav_msgs message_runtime nodelet roscpp std_msgs
  DEPENDS system_lib
 )
 
@@ -74,7 +76,7 @@ path_planner_generate_messages_cpp)
 add_library(path_planner_nodelet src/path_planner_nodelet.cpp)
 target_link_libraries(path_planner_nodelet
   ${catkin_LIBRARIES}
-  path_planner_nodelet
+  path_planner
 )
 
 ## Declare a C++ executable

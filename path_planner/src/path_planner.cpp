@@ -1,4 +1,5 @@
 #include <path_planner/path_planner.h>
+#include <nav_msgs/Path.h>
 
 #include <cmath>
 #include <algorithm>
@@ -6,6 +7,7 @@
 namespace path_planner {
 	PathPlanner::PathPlanner(ros::NodeHandle& nh, ros::NodeHandle& pnh) : est_pos(std::make_pair(0, 0)), target_pos(std::make_pair(0, 0)) {
 
+		// init floor map
 		for(int i=0; i < FLOOR_LENGTH; i++) {
 			for(int j=0; j < FLOOR_LENGTH; j++) {
 				floor_map[i][j].x = i;
@@ -13,6 +15,13 @@ namespace path_planner {
 				floor_map[i][j].gscore = MAX_UINT;
 			} // end for j
 		} // end for i
+
+		// subscriptions
+		target_sub_ = nh.subscribe("target_pose", 1, &PathPlanner::TargetCallback, this);
+		est_pos_sub_ = nh.subscribe("state_est_pos", 1, &PathPlanner::EstPosCallback, this);
+
+		// publications
+		path_array_pub_ = nh.advertise<nav_msgs::Path>("planned_path", 1);
 	}
 
 	PathPlanner::~PathPlanner() {
@@ -133,6 +142,10 @@ namespace path_planner {
 	}
 
 	void PathPlanner::ConstructPath() {
-		
+		Node current = floor_map[target_pos.first][target_pos.second];
+		while(current.parent_x != current.x || current.parent_y != current.y) {
+			path.push_back(std::make_pair(current.x, current.y));
+			current = floor_map[current.parent_x][current.parent_y];
+		}
 	}
 }

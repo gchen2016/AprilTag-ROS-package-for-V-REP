@@ -1,1 +1,1 @@
-geometry_msgs/PoseStamped planned_path;
+nav_msgs/Path planned_path
