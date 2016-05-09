@@ -13,7 +13,7 @@ namespace state_est_control {
 			for(int x=0; x < FLOOR_LENGTH; x++)
 				tag_array.push_back(Point(x - HALF_LENGTH, y - HALF_LENGTH));
 		} 
-			
+
 
 		// subscriptions
 		pos_sub_ = nh.subscribe("tag_detections_pose", 1, &StateEstControl::PosCallback, this);
@@ -51,15 +51,18 @@ namespace state_est_control {
 
 		if(last_id != -1) {
 			id = last_id;
-
-			pos.x = tag_array[id].x - pos_diff.x;
-			pos.y = tag_array[id].y - pos_diff.y;
-
-			geometry_msgs::PoseStamped state_est_pose;
-			state_est_pose.pose.position.x = pos.x;
-			state_est_pose.pose.position.y = pos.y;
-			est_pos_pub_.publish(state_est_pose);
+			updatePose();
 		}
+	}
+
+	void StateEstControl::updatePose() {
+		pos.x = tag_array[id].x - pos_diff.x;
+		pos.y = tag_array[id].y - pos_diff.y;
+
+		geometry_msgs::PoseStamped state_est_pose;
+		state_est_pose.pose.position.x = pos.x;
+		state_est_pose.pose.position.y = pos.y;
+		est_pos_pub_.publish(state_est_pose);
 	}
 
 }

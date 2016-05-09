@@ -22,6 +22,7 @@ namespace state_est_control {
 	private:
 		void PosCallback(const geometry_msgs::PoseArray::ConstPtr& input_pos_array);
 		void IdCallback(const std_msgs::Int32MultiArray::ConstPtr& input_id_array);
+		void updatePose();
 
 	private:
 		ros::Subscriber pos_sub_;
