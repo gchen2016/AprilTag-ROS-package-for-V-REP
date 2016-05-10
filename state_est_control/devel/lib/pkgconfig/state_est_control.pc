@@ -1,8 +1,0 @@
-prefix=/home/yisha/FYP/ROS/indigo/catkin_ws/src/state_est_control/devel
-
-Name: state_est_control
-Description: Description of state_est_control
-Version: 0.0.0
-Cflags: -I/home/yisha/FYP/ROS/indigo/catkin_ws/src/state_est_control/devel/include -I/home/yisha/FYP/ROS/indigo/catkin_ws/src/state_est_control/include
-Libs: -L/home/yisha/FYP/ROS/indigo/catkin_ws/src/state_est_control/devel/lib -lstate_est_controller
-Requires: std_msgs roscpp geometry_msgs message_runtime nodelet
