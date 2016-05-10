@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/yisha/FYP/ROS/indigo/catkin_ws/src/state_est_control/devel/setup.sh

@@ -1,1 +1,3 @@
 geometry_msgs/PoseStamped state_est_pose
+std_msgs/Float32 left_wheel
+std_msgs/Float32 right_wheel
