@@ -1,6 +1,8 @@
 #ifndef GRID_GRAPH_H
 #define GRID_GRAPH_H
 
+#include <path_plan/path_util.h>
+
 #include <vector>
 
 namespace path_plan {
@@ -8,13 +10,6 @@ namespace path_plan {
 	const unsigned COST_ROTATE = 1;
 	const int DIRECTION = 4;
 	const int FLOOR_LENGTH = 5;
-
-	enum Direction {
-		DOWN,
-		LEFT,
-		UP,
-		RIGHT
-	};
 
 	struct Node;
 
@@ -76,36 +71,36 @@ namespace path_plan {
 						// adj theta
 						cost = COST_ROTATE;
 						switch (t) {
-							case UP:
-								nodeList[id]->addAdjNode(&nodeList[id_base + LEFT], COST_ROTATE);
-								nodeList[id]->addAdjNode(&nodeList[id_base + RIGHT], COST_ROTATE);
+							case path_util::UP:
+								nodeList[id]->addAdjNode(&nodeList[id_base + path_util::LEFT], COST_ROTATE);
+								nodeList[id]->addAdjNode(&nodeList[id_base + path_util::RIGHT], COST_ROTATE);
 								break;
-							case RIGHT:
-								nodeList[id]->addAdjNode(&nodeList[id_base + UP], COST_ROTATE);
-								nodeList[id]->addAdjNode(&nodeList[id_base + DOWN], COST_ROTATE);
+							case path_util::RIGHT:
+								nodeList[id]->addAdjNode(&nodeList[id_base + path_util::UP], COST_ROTATE);
+								nodeList[id]->addAdjNode(&nodeList[id_base + path_util::DOWN], COST_ROTATE);
 								break;
-							case DOWN:
-								nodeList[id]->addAdjNode(&nodeList[id_base + RIGHT], COST_ROTATE);
-								nodeList[id]->addAdjNode(&nodeList[id_base + LEFT], COST_ROTATE);
+							case path_util::DOWN:
+								nodeList[id]->addAdjNode(&nodeList[id_base + path_util::RIGHT], COST_ROTATE);
+								nodeList[id]->addAdjNode(&nodeList[id_base + path_util::LEFT], COST_ROTATE);
 								break;
-							case LEFT:
-								nodeList[id]->addAdjNode(&nodeList[id_base + DOWN], COST_ROTATE);
-								nodeList[id]->addAdjNode(&nodeList[id_base + UP], COST_ROTATE);
+							case path_util::LEFT:
+								nodeList[id]->addAdjNode(&nodeList[id_base + path_util::DOWN], COST_ROTATE);
+								nodeList[id]->addAdjNode(&nodeList[id_base + path_util::UP], COST_ROTATE);
 								break;
 						}
 
 						cost = COST_LINE;
 						// top bound
-						if(x > 0 && t == UP) 
+						if(x > 0 && t == path_util::UP) 
 							nodeList[id]->addAdjNode(&nodeList[(x-1)*l*DIRECTION + y*DIRECTION + t], COST_LINE);
 						// left bound
-						if(y > 0 && t == LEFT) 
+						if(y > 0 && t == path_util::LEFT) 
 							nodeList[id]->addAdjNode(&nodeList[x*l*DIRECTION + (y-1)*DIRECTION + t], COST_LINE);
 						// lower bound
-						if(x < (l-1) && t == DOWN)
+						if(x < (l-1) && t == path_util::DOWN)
 							nodeList[id]->addAdjNode(&nodeList[(x+1)*l*DIRECTION + y*DIRECTION + t], COST_LINE);
 						// right bound
-						if(y < (l-1) && t == RIGHT)
+						if(y < (l-1) && t == path_util::RIGHT)
 							nodeList[id]->addAdjNode(&nodeList[x*l*DIRECTION + (y+1)*DIRECTION + t], COST_LINE);
 					}
 					

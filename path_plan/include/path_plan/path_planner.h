@@ -30,8 +30,6 @@ namespace path_plan {
 		void TargetPoseCallback(const geometry_msgs::PoseStamped::ConstPtr& input_target_pose);
 		void YawCallback(const std_msgs::Float32MultiArray::ConstPtr& input_yaw);
 		void AStarSearch();
-		int ManDistance(int x1, int y1, int t1, int x2, int y2, int t2);
-		int ThetaDistance(int t1, int t2);
 		void ConstructPath(int target_id);
 
 	private:

@@ -49,7 +49,7 @@ namespace path_plan {
 			if(yaw_array.data[i] != 0)
 				yaw = yaw_array.data[i];
 		}
-		yaw_int = (int)round((yaw + 3.1415926) / 1.5707963);
+		yaw_int = path_util::getYawEnum(yaw);
 	}
 
 	void PathPlan::AStarSearch() {
@@ -68,7 +68,7 @@ namespace path_plan {
 		Node *target_node = graph->nodeList[target_id];
 		parentIdArray[start_id] = start_id;
 
-		hscoreArray[start_id] = ManDistance(start_node->x, start_node->y, start_node->theta, target_node->x, target_node->y, target_node->theta);
+		hscoreArray[start_id] = path_util::ManDistance(start_node->x, start_node->y, start_node->theta, target_node->x, target_node->y, target_node->theta);
 		printf("Start id hscore: %d\n", hscoreArray[start_id]);
 		hscoreArray[target_id] = 0;
 		gscoreArray[start_id] = 0;
@@ -123,7 +123,7 @@ namespace path_plan {
 				// insert into open list if not
 				if(std::find(openList.begin(), openList.end(), adj_node->id) == openList.end()) {
 					openList.push_back(adj_node->id);
-					hscoreArray[adj_node->id] = ManDistance(adj_node->x, adj_node->y, adj_node->theta, target_node->x, target_node->y, target_node->theta);
+					hscoreArray[adj_node->id] = path_util::ManDistance(adj_node->x, adj_node->y, adj_node->theta, target_node->x, target_node->y, target_node->theta);
 					parentIdArray[adj_node->id] = current_node->id;
 				}
 
@@ -141,14 +141,6 @@ namespace path_plan {
 
 	}
 
-	int PathPlan::ThetaDistance(int t1, int t2) {
-		return (abs(t1 - t2) < 3) ? abs(t1 - t2) : (abs(t1 -t2) - 2);
-	}
-
-	int PathPlan::ManDistance(int x1, int y1, int t1, int x2, int y2, int t2) {
-		return (abs(x1 - x2) + abs(y1 - y2) + ThetaDistance(t1, t2));
-	}
-
 	void PathPlan::ConstructPath(int target_id) {
 		int current_id = target_id;
 		std::vector<int> result_list;
@@ -156,6 +148,8 @@ namespace path_plan {
 			result_list.push_back(current_id);
 			current_id = parentIdArray[current_id];
 		}
+
+		std::reverse(result_list.begin(), result_list.end());
 
 		// publish path result
 		nav_msgs::Path planned_path;
