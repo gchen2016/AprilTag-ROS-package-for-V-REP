@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <std_msgs/Float32MultiArray.h>
+#include <std_msgs/Int32.h>
 
 #include <path_plan/grid_graph.h>
 
@@ -27,7 +28,7 @@ namespace path_plan {
 
 	private:
 		void EstPoseCallback(const geometry_msgs::PoseStamped::ConstPtr& input_est_pose);
-		void TargetPoseCallback(const geometry_msgs::PoseStamped::ConstPtr& input_target_pose);
+		void TargetIdCallback(const std_msgs::Int32::ConstPtr& input_target_id);
 		void YawCallback(const std_msgs::Float32MultiArray::ConstPtr& input_yaw);
 		void AStarSearch();
 		void ConstructPath(int target_id);
@@ -42,6 +43,8 @@ namespace path_plan {
 		geometry_msgs::PoseStamped target_pos;
 		
 		int yaw_int;
+		int target_id;
+		int last_planned_target;
 
 		GridGraph *graph;
 		std::vector<geometry_msgs::PoseStamped> path;

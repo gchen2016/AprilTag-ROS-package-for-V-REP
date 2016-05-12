@@ -1,6 +1,7 @@
 #include <state_est_control/state_est_controller.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <std_msgs/Float32.h>
+#include <std_msgs/Float64.h>
 #include <XmlRpcException.h>
 
 #include <math.h>
@@ -11,7 +12,7 @@ namespace state_est_control {
 	const float CAR_WIDTH = 0.1;
 	const float WHEEL_RADIUS = 0.04;
 
-	StateEstControl::StateEstControl(ros::NodeHandle& nh, ros::NodeHandle& pnh) : pos_diff(Point(0, 0, 0)), pos(Point(0, 0, 0)) {
+	StateEstControl::StateEstControl(ros::NodeHandle& nh, ros::NodeHandle& pnh) : pos_diff(Point(0, 0, 0)), pos(Point(0, 0, 0)), des_pos(Point(0, 0, 0)), isRandom(true) {
 
 		// init tag array
 		// const int HALF_LENGTH = FLOOR_LENGTH / 2;
@@ -25,12 +26,14 @@ namespace state_est_control {
 		pos_sub_ = nh.subscribe("tag_detections_pose", 1, &StateEstControl::PosCallback, this);
 		id_sub_ = nh.subscribe("tag_detections_id", 1, &StateEstControl::IdCallback, this);
 		des_pos_sub_ = nh.subscribe("des_pos", 1, &StateEstControl::DesPosCallback, this);
-		yaw_sub_ = nh.subscribe("tag_detections_yaw", 1, &StateEstControl::Ya)
+		yaw_sub_ = nh.subscribe("tag_detections_yaw", 1, &StateEstControl::YawCallback, this);
 
 		// publications
 		est_pos_pub_ = nh.advertise<geometry_msgs::PoseStamped>("state_est_pos", 1);
-		left_motor_pub_ = nh.advertise<std_msgs::Float32>("left_motor", 1);
-		right_motor_pub_ = nh.advertise<std_msgs::Float32>("right_motor", 1);
+		left_motor_pub_ = nh.advertise<std_msgs::Float64>("vrep/left_motor", 1);
+		right_motor_pub_ = nh.advertise<std_msgs::Float64>("vrep/right_motor", 1);
+		// left_motor_pub_ = nh.advertise<std_msgs::Float32>("left_motor", 1);
+		// right_motor_pub_ = nh.advertise<std_msgs::Float32>("right_motor", 1);
 	}
 
 	StateEstControl::~StateEstControl() {
@@ -77,12 +80,16 @@ namespace state_est_control {
 	}
 
 	void StateEstControl::DesPosCallback(const geometry_msgs::PoseStamped::ConstPtr& input_des_pos) {
-		des_pos = {
-			*input_des_pos.pose.position.x,
-			*input_des_pos.pose.position.y,
-			*input_des_pos.pose.position.z
-		};
-		GoToDesPose();
+		geometry_msgs::PoseStamped des_array = *input_des_pos;
+		
+		des_pos.x = des_array.pose.position.x;
+		des_pos.y = des_array.pose.position.y;
+		des_pos.yaw = des_array.pose.position.z;
+
+		ROS_INFO("Des pos at x: %f, y: %f, yaw: %f", des_pos.x, des_pos.y, des_pos.yaw);
+
+		isRandom = false;
+		// GoToDesPose();
 	}
 
 	void StateEstControl::updatePose() {
@@ -93,14 +100,29 @@ namespace state_est_control {
 		state_est_pose.pose.position.x = pos.x;
 		state_est_pose.pose.position.y = pos.y;
 		est_pos_pub_.publish(state_est_pose);
+
+		isRandom = false;
+
+		GoToDesPose();
 	}
 
 	void StateEstControl::GoToDesPose() {
-		while(1) {
-			float dx = des_pos.x - pos.x;
-			float dy = des_pos.y - pos.y;
-			float dth = pos.yaw;
+		if(isRandom)
+			return;
 
+		float dx = des_pos.x - pos.x;
+		float dy = des_pos.y - pos.y;
+		ROS_INFO("dx: %f, dy: %f\n", dx, dy);
+
+		float yaw_diff = getYawDiff(pos.yaw, des_pos.yaw);
+		ROS_INFO("yaw diff: %f, pos.yaw: %f, des_pos.yaw: %f", yaw_diff, pos.yaw, des_pos.yaw);
+
+		float dth = pos.yaw;
+
+		float v, w;
+
+		// line move
+		if(abs(yaw_diff) < 1) {
 			updateAlpha(dx, dy, dth);
 			updateBeta(dx, dy, dth);
 			updateP(dx, dy, dth);
@@ -108,10 +130,20 @@ namespace state_est_control {
 			float kp = 3;
 			float ka = 8;
 			float kb = -1.5;
-			float v = kp * p;
-			float w = ka * alpha + kb * beta;
-			setWheel(v, w);
+			v = kp * p;
+			w = ka * alpha + kb * beta;
+			printf("alpha: %f, beta: %f\n", alpha, beta);
+			printf("In yaw diff < 1\n");
+		} else {
+			v = 0;
+			w = -0.1 * yaw_diff;
+			printf("In yaw diff > 1\n");
 		}
+
+		setWheel(v, w);
+
+		ROS_INFO("Set v: %f, w: %f", v, w);
+		// isRandom = true;
 	}
 
 	void StateEstControl::updateAlpha(float dx, float dy, float dth) {
@@ -119,7 +151,7 @@ namespace state_est_control {
 	}
 
 	void StateEstControl::updateBeta(float dx, float dy, float dth) {
-		beta = - dth - alpha;
+		beta = - alpha - dth + des_pos.yaw;
 	}
 
 	void StateEstControl::updateP(float dx, float dy, float dth) {
@@ -127,16 +159,28 @@ namespace state_est_control {
 	}
 
 	void StateEstControl::setWheel(float v, float w) {
+		v *= 0.1;
 		float L = CAR_WIDTH;
 		float R = WHEEL_RADIUS;
 
-		std_msgs::Float32 vr, vl;
+		std_msgs::Float64 vr, vl;
 		vr.data = (2*v + w*L) / (2*R);
 		vl.data = (2*v - w*L) / (2*R);
 
 		left_motor_pub_.publish(vl);
 		right_motor_pub_.publish(vr);
 
+		ROS_INFO("left motor: %f, right motor: %f", vl.data, vr.data);
+
 	}
 
+	float StateEstControl::getYawDiff(float y1, float y2) {
+		float diff = y1 - y2;
+		if(diff < -3.1415926)
+			diff += 3.1415926;
+		else if(diff > 3.1415926)
+			diff -= 3.1415926;
+
+		return diff;
+	}
 }

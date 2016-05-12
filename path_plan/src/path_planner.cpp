@@ -7,7 +7,10 @@
 
 namespace path_plan {
 
-	PathPlan::PathPlan(ros::NodeHandle& nh, ros::NodeHandle& pnh) : yaw_int(-1) {
+	PathPlan::PathPlan(ros::NodeHandle& nh, ros::NodeHandle& pnh) : yaw_int(-1), target_id(-1), last_planned_target(-1) {
+
+		// init
+		target_id = 0;
 
 		graph = new GridGraph();
 
@@ -17,7 +20,7 @@ namespace path_plan {
 
 		// subscriptions
 		est_pos_sub_ = nh.subscribe("state_est_pos", 1, &PathPlan::EstPoseCallback, this);
-		target_pos_sub_ = nh.subscribe("target_pos", 1, &PathPlan::TargetPoseCallback, this);
+		target_pos_sub_ = nh.subscribe("target_pos", 1, &PathPlan::TargetIdCallback, this);
 		yaw_sub_ = nh.subscribe("tag_detections_yaw", 1, &PathPlan::YawCallback, this);
 
 		// publications
@@ -32,21 +35,28 @@ namespace path_plan {
 
 	void PathPlan::EstPoseCallback(const geometry_msgs::PoseStamped::ConstPtr& input_est_pose) {
 		est_pos = *input_est_pose;
-		est_pos.pose.position.x += FLOOR_LENGTH/2;
-		est_pos.pose.position.y += FLOOR_LENGTH/2;
-		AStarSearch();
+
+		if(last_planned_target != target_id) {
+			last_planned_target = target_id;
+			AStarSearch();
+		}
 	}
 
-	void PathPlan::TargetPoseCallback(const geometry_msgs::PoseStamped::ConstPtr& input_target_pose) {
-		target_pos = *input_target_pose;
-		AStarSearch();
+	void PathPlan::TargetIdCallback(const std_msgs::Int32::ConstPtr& input_target_id) {
+		// target_pos = *input_target_pose;
+		std_msgs::Int32 target_id_int32 = *input_target_id;
+
+		if(target_id != target_id_int32.data) {
+			target_id = target_id_int32.data;
+			AStarSearch();
+		}
 	}
 
 	void PathPlan::YawCallback(const std_msgs::Float32MultiArray::ConstPtr& input_yaw) {
 		std_msgs::Float32MultiArray yaw_array = *input_yaw;
 		float yaw;
 		for(int i=0; i < yaw_array.data.size(); i++) {
-			if(yaw_array.data[i] != 0)
+			if(yaw_array.data[i] < 4 || yaw_array.data[i] > -4)
 				yaw = yaw_array.data[i];
 		}
 		yaw_int = path_util::getYawEnum(yaw);
@@ -55,21 +65,21 @@ namespace path_plan {
 	void PathPlan::AStarSearch() {
 		int l = FLOOR_LENGTH;
 		int d = DIRECTION;
-		int target_id = 0;
+		// int target_id = 0;
 
-		if(yaw_int == -1)
+		if(yaw_int < 0 || yaw_int > 3 || target_id == -1)
 			return;
 
 		// add starting point
-		printf("x: %d, y: %d, yaw: %d\n", (int)round(est_pos.pose.position.x), (int)round(est_pos.pose.position.y), yaw_int);
+		ROS_INFO("x: %d, y: %d, yaw: %d\n", (int)round(est_pos.pose.position.x), (int)round(est_pos.pose.position.y), yaw_int);
 		int start_id = ((int)round(est_pos.pose.position.x))*l*d + ((int)round(est_pos.pose.position.y))*d + yaw_int;
-		printf("Start id: %d\n", start_id);
+		ROS_INFO("Start id: %d\n", start_id);
 		Node *start_node = graph->nodeList[start_id];
 		Node *target_node = graph->nodeList[target_id];
 		parentIdArray[start_id] = start_id;
 
 		hscoreArray[start_id] = path_util::ManDistance(start_node->x, start_node->y, start_node->theta, target_node->x, target_node->y, target_node->theta);
-		printf("Start id hscore: %d\n", hscoreArray[start_id]);
+		ROS_INFO("Start id hscore: %d\n", hscoreArray[start_id]);
 		hscoreArray[target_id] = 0;
 		gscoreArray[start_id] = 0;
 		gscoreArray[target_id] = hscoreArray[start_id];
@@ -159,9 +169,10 @@ namespace path_plan {
 			g.pose.position.x = (float)graph->nodeList[index]->x;
 			g.pose.position.y = (float)graph->nodeList[index]->y;
 			g.pose.position.z = (float)graph->nodeList[index]->theta;
-			printf("Construct id x: %f, y: %f, t: %f\n", g.pose.position.x, g.pose.position.y, g.pose.position.z);
+			ROS_INFO("Construct id x: %f, y: %f, t: %f\n", g.pose.position.x, g.pose.position.y, g.pose.position.z);
 			planned_path.poses.push_back(g);
 		}
 		path_pub_.publish(planned_path);
+		ROS_INFO("Path planned for target id: %d",  target_id);
 	}
 }

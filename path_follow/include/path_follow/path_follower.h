@@ -8,7 +8,19 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <std_msgs/Float32MultiArray.h>
 
+#include <vector>
+
 namespace path_follow {
+	struct PathPoint {
+		int x;
+		int y;
+		int yaw;
+		int distance;
+		bool operator==(const PathPoint& a) const {
+			return (x == a.x && y == a.y && yaw == a.yaw);
+		}
+	};
+
 	class PathFollow {
 	public:
 		PathFollow(ros::NodeHandle& nh, ros::NodeHandle& pnh);
@@ -27,9 +39,11 @@ namespace path_follow {
 		ros::Publisher des_pos_pub_;
 
 		geometry_msgs::PoseStamped est_pos;
-		nav_msgs::Path planned_path;
+		std::vector<PathPoint> des_path_array;
 		float est_yaw;
 		int yaw_int;
+
+		bool isRandom;
 	};
 }
 

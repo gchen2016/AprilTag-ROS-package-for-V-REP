@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <geometry_msgs/PoseArray.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <std_msgs/Int32MultiArray.h>
 #include <std_msgs/Float32MultiArray.h>
 
@@ -32,6 +33,7 @@ namespace state_est_control {
 		void updateBeta(float dx, float dy, float dth);
 		void updateP(float dx, float dy, float dth);
 		void setWheel(float v, float w);
+		float getYawDiff(float y1, float y2);
 
 
 	private:
@@ -52,6 +54,8 @@ namespace state_est_control {
 		float alpha;
 		float beta;
 		float p;
+
+		bool isRandom;
 	};
 }
 
