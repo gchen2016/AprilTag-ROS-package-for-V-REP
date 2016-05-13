@@ -6,10 +6,10 @@
 
 namespace path_util {
 	enum Direction {
-		UP,
-		LEFT,
 		DOWN,
-		RIGHT
+		RIGHT,
+		UP,
+		LEFT
 	};
 
 	int ThetaDistance(int t1, int t2) {
@@ -21,10 +21,17 @@ namespace path_util {
 	}
 
 	int getYawEnum(float yaw_f) {
-		return (int)round((yaw_f + 3.1415926) / 1.5707963);
+		if(yaw_f ==  -1) 
+			return -1;
+
+		int tmp = (int)round((yaw_f + 3.141592) / 1.570796);
+		if(tmp > -1 && tmp < 4)
+			return tmp;
+
+		return -1;
 	}
 	float getYawFloat(int yaw_i) {
-		return (float)yaw_i * 1.5707963 - 3.1415926;
+		return (float)yaw_i * 1.570796 - 3.141592;
 	}
 }
 

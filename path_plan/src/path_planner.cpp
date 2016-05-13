@@ -36,10 +36,7 @@ namespace path_plan {
 	void PathPlan::EstPoseCallback(const geometry_msgs::PoseStamped::ConstPtr& input_est_pose) {
 		est_pos = *input_est_pose;
 
-		if(last_planned_target != target_id) {
-			last_planned_target = target_id;
-			AStarSearch();
-		}
+		AStarSearch();
 	}
 
 	void PathPlan::TargetIdCallback(const std_msgs::Int32::ConstPtr& input_target_id) {
@@ -54,21 +51,30 @@ namespace path_plan {
 
 	void PathPlan::YawCallback(const std_msgs::Float32MultiArray::ConstPtr& input_yaw) {
 		std_msgs::Float32MultiArray yaw_array = *input_yaw;
-		float yaw;
+		float yaw = -1;
 		for(int i=0; i < yaw_array.data.size(); i++) {
-			if(yaw_array.data[i] < 4 || yaw_array.data[i] > -4)
+			if(yaw_array.data[i] < 4 || yaw_array.data[i] > -4) {
 				yaw = yaw_array.data[i];
+			}
 		}
+
 		yaw_int = path_util::getYawEnum(yaw);
 	}
 
 	void PathPlan::AStarSearch() {
 		int l = FLOOR_LENGTH;
 		int d = DIRECTION;
+		
 		// int target_id = 0;
 
-		if(yaw_int < 0 || yaw_int > 3 || target_id == -1)
+		if(last_planned_target == target_id) {
 			return;
+		}
+
+		if(yaw_int < 0 || yaw_int > 3 || target_id == -1) {
+			ROS_ERROR("Error in a*\nYaw: %d, target_id: %d", yaw_int, target_id);
+			return;
+		}
 
 		// add starting point
 		ROS_INFO("x: %d, y: %d, yaw: %d\n", (int)round(est_pos.pose.position.x), (int)round(est_pos.pose.position.y), yaw_int);
@@ -174,5 +180,6 @@ namespace path_plan {
 		}
 		path_pub_.publish(planned_path);
 		ROS_INFO("Path planned for target id: %d",  target_id);
+		last_planned_target = target_id;
 	}
 }

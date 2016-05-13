@@ -43,7 +43,7 @@ catkin_package(
  INCLUDE_DIRS include
  LIBRARIES path_follower
  CATKIN_DEPENDS cmake_modules geometry_msgs message_runtime nav_msgs nodelet roscpp std_msgs
- DEPENDS system_lib
+ DEPENDS system_lib eigen
 )
 
 ###########
@@ -52,6 +52,7 @@ catkin_package(
 
 include_directories(include)
 include_directories(
+  ${Eigen_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
 

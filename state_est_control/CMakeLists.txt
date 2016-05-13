@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   nodelet
 )
 
+find_package(Eigen REQUIRED)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -47,7 +49,7 @@ catkin_package(
  INCLUDE_DIRS include
  LIBRARIES state_est_controller
  CATKIN_DEPENDS std_msgs roscpp geometry_msgs message_runtime nodelet
- DEPENDS system_lib
+ DEPENDS system_lib eigen
 )
 
 ###########
@@ -56,6 +58,7 @@ catkin_package(
 
 include_directories(include)
 include_directories(
+  ${Eigen_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
 
