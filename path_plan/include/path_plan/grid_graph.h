@@ -31,13 +31,13 @@ namespace path_plan {
 
 		Node(int inputX, int inputY, int inputT, int inputId) : x(inputX), y(inputY), theta(inputT), id(inputId){};
 
-		//do not del the adj nodes here...they will be deleted by graph destructor
+
 		~Node() {
 			edgeList.clear();
 		}
 
 		void addAdjNode(Node **adj, unsigned cost) {
-		//create an edge with 'this' as the originating node and adj as the destination node
+
 			Edge newEdge(this, *adj, cost);
 			edgeList.push_back(newEdge);
 		}
@@ -110,7 +110,7 @@ namespace path_plan {
 		}
 
 		~GridGraph() {
-		//free mem allocated to verticies
+		// free mem allocated to verticies
 			for(int i=0; i < nodeList.size(); i++)
 				delete nodeList[i];
 			nodeList.clear();

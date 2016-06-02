@@ -8,7 +8,7 @@
 #include <math.h>
 
 const int FLOOR_LENGTH = 5;
-const float MOTOR_SCALAR = 1.3;
+const float MOTOR_SCALAR = 1;
 
 namespace state_est_control {
 	const float CAR_WIDTH = 0.1655*2;
@@ -24,12 +24,12 @@ namespace state_est_control {
 		} 
 
 		// init rotation matrix
-		world_to_tag << -1, 0, 0,
-		0, -1, 0,
-		0, 0, 1;
-		cam_to_robot << 1, 0, 0,
-		0, -1, 0,
-		0, 0, -1;
+		world_to_tag << -1.0, 0.0, 0.0,
+		0.0, -1.0, 0.0,
+		0.0, 0.0, 1.0;
+		cam_to_robot << 1.0, 0.0, 0.0,
+		0.0, -1.0, 0.0,
+		0.0, 0.0, -1.0;
 
 		// subscriptions
 		pos_sub_ = nh.subscribe("tag_detections_pose", 1, &StateEstControl::PosCallback, this);
@@ -50,6 +50,10 @@ namespace state_est_control {
 		pos_sub_.shutdown();
 		id_sub_.shutdown();
 		des_pos_sub_.shutdown();
+		yaw_sub_.shutdown();
+		left_state_sub_.shutdown();
+		right_state_sub_.shutdown();
+		vrep_pos_sub_.shutdown();
 	};
 
 	void StateEstControl::PosCallback(const geometry_msgs::PoseArray::ConstPtr& input_pos_array) {
@@ -92,7 +96,7 @@ namespace state_est_control {
 
 		for(int i=0; i < yaw_array.data.size(); i++) {
 			if(yaw_array.data[i] < 4 || yaw_array.data[i] > -4)
-				pos.yaw = yaw_array.data[i];
+				pos.yaw = normTheta(yaw_array.data[i] + 3.141592);
 		}
 
 	}
@@ -104,6 +108,8 @@ namespace state_est_control {
 		des_pos.y = des_array.pose.position.y;
 		des_pos.yaw = des_array.pose.position.z;
 
+		des_pos.yaw = normTheta(des_pos.yaw + 3.141592);
+
 		ROS_INFO("Des pos at x: %f, y: %f, yaw: %f", des_pos.x, des_pos.y, des_pos.yaw);
 
 		isRandom = false;
@@ -114,16 +120,16 @@ namespace state_est_control {
 		sensor_msgs::JointState left_state_array = *input_left_state;
 		left_v = - left_state_array.velocity[0] * MOTOR_SCALAR;
 
-		if(!isAprilTag)
-			AccumPose();
+		// if(!isAprilTag)
+			// AccumPose();
 	}
 
 	void StateEstControl::RightMotorCallback(const sensor_msgs::JointState::ConstPtr& input_right_state) {
 		sensor_msgs::JointState right_state_array = *input_right_state;
 		right_v = - right_state_array.velocity[0] * MOTOR_SCALAR;
 
-		if(!isAprilTag)
-			AccumPose();
+		// if(!isAprilTag)
+			// AccumPose();
 	}
 
 	void StateEstControl::VrepPosCallback(const geometry_msgs::PoseStamped::ConstPtr& input_vrep_pos) {
@@ -144,10 +150,10 @@ namespace state_est_control {
 		Eigen::Vector3d diff_cam(pos_diff.x, pos_diff.y, 0);
 		Eigen::Vector3d diff_vector;
 
-		diff_vector = - robot_to_world.inverse() * diff_cam;
+		diff_vector = robot_to_world.inverse() * diff_cam;
 
 		ROS_INFO("diff_vector: %f, %f, %f\n", diff_vector[0], diff_vector[1], diff_vector[2]);
-		UpdatePose(tag_array[id].x + pos_diff.x, tag_array[id].y + pos_diff.y, pos.yaw);
+		UpdatePose(tag_array[id].x + diff_vector[0], tag_array[id].y - diff_vector[1], pos.yaw);
 	}
 
 	void StateEstControl::UpdateTagMaxtrix() {
@@ -185,7 +191,7 @@ namespace state_est_control {
 		float object_yaw = object_w * PUB_RATE;
 
 		ROS_INFO("accum_x: %f, accum_y: %f\n", accum_x, accum_y);
-		UpdatePose(pos.x + accum_x, pos.y + accum_y, normOmega(pos.yaw + object_yaw));
+		UpdatePose(pos.x + accum_x, pos.y + accum_y, normTheta(pos.yaw + object_yaw));
 	}
 
 	void StateEstControl::UpdatePose(float updateX, float updateY, float updateYaw) {
@@ -217,12 +223,13 @@ namespace state_est_control {
 
 		float v, w;
 
-		if(fabs(dx) > 0.02 || fabs(dy) > 0.02) {
+		if(fabs(dx) > 0.1 || fabs(dy) > 0.1) {
 			updateAlpha(dx, dy, dth);
 			updateBeta(dx, dy, dth);
 			updateP(dx, dy, dth);
 
 			ROS_INFO("Line move, dx: %f, dy: %f, yaw_diff: %f\n", dx, dy, yaw_diff);
+			ROS_INFO("alpha: %f, beta: %f, p: %f\n", alpha, beta, p);
 
 			float kp = 3;
 			float ka = 8;
@@ -236,7 +243,7 @@ namespace state_est_control {
 			w = -0.1 * yaw_diff;
 		} 
 
-		w = normOmega(w);
+		w = normTheta(w);
 		setWheel(v, w);
 
 		ROS_INFO("Set v: %f, w: %f", v, w);
@@ -244,11 +251,12 @@ namespace state_est_control {
 	}
 
 	void StateEstControl::updateAlpha(float dx, float dy, float dth) {
-		alpha = - dth + atan2(dy, dx);
+		alpha = normTheta(- dth + atan2(dy, dx));
+		ROS_INFO("atan2(dy, dx): %f\n", atan2(dy, dx));
 	}
 
 	void StateEstControl::updateBeta(float dx, float dy, float dth) {
-		beta = - alpha - dth + des_pos.yaw;
+		beta = normTheta(- alpha - dth + des_pos.yaw);
 	}
 
 	void StateEstControl::updateP(float dx, float dy, float dth) {
@@ -256,7 +264,7 @@ namespace state_est_control {
 	}
 
 	void StateEstControl::setWheel(float v, float w) {
-		v *= 0.15;
+		v *= 0.1;
 		float L = CAR_WIDTH;
 		float R = WHEEL_RADIUS;
 
@@ -281,17 +289,10 @@ namespace state_est_control {
 		return diff;
 	}
 
-	float StateEstControl::normOmega(float input_w) {
+	float StateEstControl::normTheta(float input_w) {
 		if(fabs(input_w) < 3.1416)
 			return input_w;
 
-		int q;
-		if(input_w > 0) {
-			q = (int)floor(input_w / 3.141592);
-			return input_w - q * 3.141592;
-		} else {
-			q = (int)floor(- input_w / 3.141592);
-			return input_w + q * 3.141592;
-		}
+		return atan2(sin(input_w), cos(input_w));
 	}
 }

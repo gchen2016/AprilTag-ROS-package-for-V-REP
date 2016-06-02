@@ -93,7 +93,7 @@ namespace path_plan {
 		fscoreArray[start_id] = hscoreArray[start_id];
 		openList.push_back(start_id);
 
-
+		// start search
 		while(openList.size() != 0) {
 			// std::sort(openList.begin(), openList.end(), [](const int& a, const int& b) { 
 			// 	if (fscoreArray[a] < fscoreArray[b])

@@ -48,7 +48,7 @@ namespace state_est_control {
 		void updateP(float dx, float dy, float dth);
 		void setWheel(float v, float w);
 		float getYawDiff(float y1, float y2);
-		float normOmega(float input_w);
+		float normTheta(float input_w);
 
 
 	private:
